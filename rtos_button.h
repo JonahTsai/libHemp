@@ -1,0 +1,77 @@
+/*
+ * rtos_button.h
+ *
+ * Created: 6/4/2013 11:17:19 AM
+ *  Author: Jonah Tsai
+ */ 
+
+
+#ifndef RTOS_BUTTON_H_
+#define RTOS_BUTTON_H_
+
+#include <FreeRTOS.h>
+#include <semphr.h>
+
+#include <stdint.h>
+#include <pio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define RTOS_BUTTON_PIN_ENABLED_MASK 0x0001
+#define RTOS_BUTTON_PORT_UPDATED_MASK 0x01
+
+typedef struct {
+	uint32_t data_position;
+	uint16_t flags;
+} rtos_button_pio_button_t;
+
+typedef struct {
+	uint32_t last_update_mask;
+	uint32_t last_update_data;
+	uint8_t flags;
+	rtos_button_pio_button_t button_conf[32];
+} rtos_button_pio_port_t;
+
+typedef struct {
+	uint8_t* data;
+	size_t num_button;
+	
+	// PIO port stuff
+#ifdef ID_PIOF
+	rtos_button_pio_port_t ports[6];
+#define MAX_PIO_PORT_IDX 5
+#elif defined(ID_PIOE)
+	rtos_button_pio_port_t ports[5];
+#define MAX_PIO_PORT_IDX 4
+#elif defined(ID_PIOD)
+	rtos_button_pio_port_t ports[4];
+#define MAX_PIO_PORT_IDX 3
+#elif defined(ID_PIOC)
+	rtos_button_pio_port_t ports[3];
+#define MAX_PIO_PORT_IDX 2
+#elif defined(ID_PIOB)
+	rtos_button_pio_port_t ports[2];
+#define MAX_PIO_PORT_IDX 1
+#elif defined(ID_PIOA)
+	rtos_button_pio_port_t ports[1];
+#define MAX_PIO_PORT_IDX 0
+#endif
+	
+	// RTOS Semaphores
+	xSemaphoreHandle mutex; // mutex for protecting this data structure
+	xSemaphoreHandle rtos_internal_task_semaphore; // mutex for FreeRTOS internal button processing task synchronization.
+	xSemaphoreHandle rtos_task_semaphore; // mutex for FreeRTOS button external task synchronization.
+} rtos_button_data_t;
+
+extern rtos_button_data_t g_rtos_button_data;
+
+void rtos_button_init(uint16_t num_buttons, bool is_enable_tm_stick);
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* RTOS_BUTTON_H_ */
