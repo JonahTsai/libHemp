@@ -25,8 +25,8 @@ tm_stick_data_t g_tm_stick_data = {
 	.mutex = NULL,
 	.rtos_task_semaphore = NULL,
 	.button_position[0] = 0,
-	.button_position[1] = -1, // this pin is not connected.
-	.button_position[2] = -1, // this pin is not connected.
+	.button_position[1] = 1, // this pin is not connected.
+	.button_position[2] = 2, // this pin is not connected.
 	.button_position[3] = 3,
 	.button_position[4] = 4,
 	.button_position[5] = 5,
@@ -131,7 +131,7 @@ void tm_stick_init(uint32_t bus_speed_hz) {
 	
 	sysclk_enable_peripheral_clock(ID_SSC);
 	ssc_reset(SSC);
-	// Do not go over 1MHz, the pulse will be too long and extend over to the next clock's rising edge (The spec. sheet of 4021BCM does not really list the operation time of 3.3V operation.
+	// Do not go over 1MHz, the pulse will be too long and extend over to the next clock's rising edge (The spec. sheet of 4021BCM does not really list the operation times of 3.3V operation.
 	// I tested a couple of speeds.... at 1.25MHz, I found that it sometimes misses some pulses.
 	if(bus_speed_hz > TM_STICK_MAX_BUS_SPEED){
 		bus_speed_hz = TM_STICK_MAX_BUS_SPEED;
@@ -140,7 +140,15 @@ void tm_stick_init(uint32_t bus_speed_hz) {
 	clock_opt_t rx_clk_opt = {
 		.ul_cks = SSC_RCMR_CKS_MCK,
 		.ul_cko = SSC_RCMR_CKO_TRANSFER,
-		.ul_cki = SSC_RCMR_CKI, // 0,
+// TODO: Fix the SSC clock for some reason shift 1/2 clock pulse position.
+// This makes the button results shift one position to the right. So we have to change rising/falling edge to "correct" it (oh, well, "hack" around it).
+// Don't know why.
+// One possible patch up is to use a pin to signal which one is desired to determine which of the following settings to use..
+#if defined(CONF_BOARD_ARDUINO_DUE) 
+		.ul_cki = 0, //SSC_RCMR_CKI,
+#else
+		.ul_cki = SSC_RCMR_CKI,
+#endif
 		.ul_ckg = SSC_RCMR_CKG_CONTINUOUS,
 		.ul_start_sel = SSC_RCMR_START_RF_FALLING,
 		.ul_period = 0,
