@@ -104,6 +104,7 @@ typedef struct {
 	// uint32_t data_acc[MAX_ADC_CHANNEL];
 	rtos_adc_decimation_buffer decimation_buf[MAX_ADC_CHANNEL];
 	uint8_t channel_flags[MAX_ADC_CHANNEL];
+	uint8_t channel_mapping[MAX_ADC_CHANNEL];
 	uint8_t num_channel_enabled;
 	uint16_t adc_config;
 	xSemaphoreHandle mutex; // mutex for protecting this data structure

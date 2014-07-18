@@ -34,7 +34,7 @@
 
 #include "conf_hempstead.h"
 
-#if CONF_ENABLE_TM_STICK_IN_BUTTON
+#if (CONF_ENABLE_TM_STICK_IN_BUTTON == 1)
 #include "tm_stick.h"
 static void tm_stick_task(void* parameters);
 #endif
@@ -116,6 +116,8 @@ static void button_task(void *parameters) {
 	}
 }
 
+
+#if (CONF_ENABLE_TM_STICK_IN_BUTTON == 1)
 static void tm_stick_task(void* parameters) {
 	while(1) {
 		xSemaphoreTake(g_tm_stick_data.rtos_task_semaphore, portMAX_DELAY); // wait for task notification
@@ -135,7 +137,7 @@ static void tm_stick_task(void* parameters) {
 				if((stick_value & current_tm_stick_mask) == 0) {
 					current_position_mask = ~current_position_mask;
 					g_rtos_button_data.data[current_position_idx] &= current_position_mask;
-					} else {
+				} else {
 					g_rtos_button_data.data[current_position_idx] |= current_position_mask; // turn the bit on
 				}
 			}
@@ -149,6 +151,7 @@ static void tm_stick_task(void* parameters) {
 		xSemaphoreGive(g_rtos_button_data.rtos_task_semaphore); // Notify
 	}
 }
+#endif
 
 void rtos_button_init(uint16_t num_buttons, bool is_enable_tm_stick) {
 	if(g_rtos_button_data.mutex == NULL) {
@@ -210,11 +213,12 @@ void rtos_button_init(uint16_t num_buttons, bool is_enable_tm_stick) {
 	xTaskHandle button_task_handle;
 	xTaskCreate(button_task, (const signed char*)"Button Processing Task", configMINIMAL_STACK_SIZE * 2, NULL, ( ( unsigned portBASE_TYPE ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT, &button_task_handle);
 	
+#if (CONF_ENABLE_TM_STICK_IN_BUTTON == 1)
 	if(is_enable_tm_stick) {
 		xTaskHandle tm_stick_handle;
-		xTaskCreate(tm_stick_task, (const signed char*)"Button Processing Task", configMINIMAL_STACK_SIZE * 2, NULL, ( ( unsigned portBASE_TYPE ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT, &tm_stick_handle);
+		xTaskCreate(tm_stick_task, (const signed char*)"TMStick Processing Task", configMINIMAL_STACK_SIZE * 2, NULL, ( ( unsigned portBASE_TYPE ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT, &tm_stick_handle);
 	}
-		
+#endif
 }
 
 
