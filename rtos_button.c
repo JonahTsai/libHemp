@@ -31,6 +31,7 @@
 #include <pio_handler.h>
 
 #include <malloc.h>
+#include <string.h>
 
 #include "conf_hempstead.h"
 
@@ -46,7 +47,7 @@ extern "C" {
 static void button_handler(uint32_t portId, uint32_t mask);
 static void button_task(void *parameters);
 
-
+static uint8_t hat_value_map[] = {RTOS_HAT_NO_STATE_VALUE, 0, 2, 1, 4, RTOS_HAT_NO_STATE_VALUE, 3, RTOS_HAT_NO_STATE_VALUE, 6, 7, RTOS_HAT_NO_STATE_VALUE, RTOS_HAT_NO_STATE_VALUE, 5, RTOS_HAT_NO_STATE_VALUE, RTOS_HAT_NO_STATE_VALUE, RTOS_HAT_NO_STATE_VALUE, RTOS_HAT_NO_STATE_VALUE};
 
 
 static void button_handler(uint32_t portId, uint32_t mask) {
@@ -123,15 +124,58 @@ static void tm_stick_task(void* parameters) {
 		xSemaphoreTake(g_tm_stick_data.rtos_task_semaphore, portMAX_DELAY); // wait for task notification
 		xSemaphoreTake(g_rtos_button_data.mutex, portMAX_DELAY); // lock down for our own data structure
 		xSemaphoreTake(g_tm_stick_data.mutex, portMAX_DELAY); // lock down tm stick's data structure
-		int current_position = -1;
+		uint32_t current_position = -1;
 		uint32_t* stick_value_buf = (uint32_t*)g_tm_stick_data.data;
 		uint32_t stick_value = *stick_value_buf;
 		uint32_t current_tm_stick_mask = 0x0001;
 		uint8_t current_position_mask = 0;
 		uint8_t current_position_idx = 0;
+		uint32_t raw_hat_data = 0x0; // we just collect Hat's raw data in here.
+		uint8_t processed_hat_value_num = 0;
+		
 		for(size_t i = 0; i < 24; i++) {
 			current_position = g_tm_stick_data.button_position[i];
-			if(current_position >= 0) {
+
+				// process hat value.
+			if(current_position >= RTOS_BUTTON_HAT_POSITION_IDX && RTOS_BUTTON_HAT_POSITION_IDX <= RTOS_BUTTON_HAT_POSITION_IDX + 3) {
+				// a Hat1 button
+				uint32_t current_hat_temp_value = stick_value & current_tm_stick_mask;
+				switch(current_position) {
+					case (RTOS_BUTTON_HAT_POSITION_IDX):
+						if(current_hat_temp_value > 0) {
+							raw_hat_data |= 0x0001;
+						}
+						processed_hat_value_num++;
+					break;
+						
+					case (RTOS_BUTTON_HAT_POSITION_IDX + 1):
+						if(current_hat_temp_value > 0) {
+							raw_hat_data |= 0x0002;
+						}
+						processed_hat_value_num++;
+					break;
+						
+					case (RTOS_BUTTON_HAT_POSITION_IDX + 2):
+						if(current_hat_temp_value > 0) {
+							raw_hat_data |= 0x0004;
+						}
+						processed_hat_value_num++;
+					break;
+						
+					case (RTOS_BUTTON_HAT_POSITION_IDX + 3):
+						if(current_hat_temp_value > 0) {
+							raw_hat_data |= 0x0008;
+						}
+						processed_hat_value_num++;
+					break;
+						
+					default:
+						// do nothing.
+					break;
+				}
+
+			} else {
+				
 				current_position_idx = current_position / 8;
 				current_position_mask = 0x01 << (current_position % 8);
 				if((stick_value & current_tm_stick_mask) == 0) {
@@ -141,9 +185,23 @@ static void tm_stick_task(void* parameters) {
 					g_rtos_button_data.data[current_position_idx] |= current_position_mask; // turn the bit on
 				}
 			}
+
 			current_tm_stick_mask = current_tm_stick_mask << 1;
 		}
 		
+		// now translate hat value
+		// TM stick only has one hat, assume is index 0, hat 1.
+		if(processed_hat_value_num == 4 && g_rtos_button_data.num_hat > 0) {
+			if(raw_hat_data <= 16) {
+				g_rtos_button_data.hat_data[0] = hat_value_map[raw_hat_data & 0x000F]; // use a lookup table to translate.s
+			} else {
+				g_rtos_button_data.hat_data[0] = RTOS_HAT_NO_STATE_VALUE;
+			}
+		} else {
+			// refuse to process hat value
+			g_rtos_button_data.hat_data[0] = RTOS_HAT_NO_STATE_VALUE;
+		}
+				
 		xSemaphoreGive(g_tm_stick_data.mutex);
 		xSemaphoreGive(g_rtos_button_data.mutex);
 		
@@ -182,6 +240,13 @@ void rtos_button_init(uint16_t num_buttons, bool is_enable_tm_stick) {
 			for(size_t i = 0; i < size; i++) {
 				g_rtos_button_data.data[i] = 0;
 			}
+		}
+	}
+	
+	if(g_rtos_button_data.hat_data == NULL && g_rtos_button_data.num_hat > 0) {
+		g_rtos_button_data.hat_data = malloc(g_rtos_button_data.num_hat);
+		if(g_rtos_button_data.hat_data != NULL) {
+			memset(g_rtos_button_data.hat_data, 0x0, g_rtos_button_data.num_hat);
 		}
 	}
 	

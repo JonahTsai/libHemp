@@ -39,6 +39,11 @@ extern "C" {
 #define RTOS_BUTTON_PIN_ENABLED_MASK 0x0001
 #define RTOS_BUTTON_PORT_UPDATED_MASK 0x01
 
+// The start button index of the HAT switch(s), currently reserve 4 assuming there is only one hat switch.s
+#define RTOS_BUTTON_HAT_POSITION_IDX	(UINT32_MAX - 3)
+#define RTOS_BUTTON_OUT_OF_RANGE_IDX	RTOS_BUTTON_HAT_POSITION_IDX
+#define RTOS_HAT_NO_STATE_VALUE			(UINT8_MAX)
+
 typedef struct {
 	uint32_t data_position;
 	uint16_t flags;
@@ -54,6 +59,8 @@ typedef struct {
 typedef struct {
 	uint8_t* data;
 	size_t num_button;
+	uint8_t* hat_data;
+	size_t num_hat;
 	
 	// PIO port stuff
 #ifdef ID_PIOF

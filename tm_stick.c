@@ -32,6 +32,7 @@
 #include <gpio.h>
 
 #include "conf_hempstead.h"
+#include "rtos_button.h"
 
 
 #ifdef __cplusplus
@@ -42,29 +43,29 @@ tm_stick_data_t g_tm_stick_data = {
 	.mutex = NULL,
 	.rtos_task_semaphore = NULL,
 	.button_position[0] = 0,
-	.button_position[1] = 1, // this pin is not connected.
-	.button_position[2] = 2, // this pin is not connected.
-	.button_position[3] = 3,
-	.button_position[4] = 4,
-	.button_position[5] = 5,
-	.button_position[6] = 6,
-	.button_position[7] = 7,
-	.button_position[8] = 8,
-	.button_position[9] = 9,
-	.button_position[10] = 10,
-	.button_position[11] = 11,
-	.button_position[12] = 12,
-	.button_position[13] = 13,
-	.button_position[14] = 14,
-	.button_position[15] = 15,
-	.button_position[16] = 16,
-	.button_position[17] = 17,
-	.button_position[18] = 18,
-	.button_position[19] = 19,
-	.button_position[20] = 20,
-	.button_position[21] = 21,
-	.button_position[22] = 22,
-	.button_position[23] = 23
+	.button_position[1] = 19, // this pin is not connected.
+	.button_position[2] = 18, // this pin is not connected.
+	.button_position[3] = 1,
+	.button_position[4] = 2,
+	.button_position[5] = 3,
+	.button_position[6] = 4,
+	.button_position[7] = 5,
+	.button_position[8] = RTOS_BUTTON_HAT_POSITION_IDX,
+	.button_position[9] = RTOS_BUTTON_HAT_POSITION_IDX + 1,
+	.button_position[10] = RTOS_BUTTON_HAT_POSITION_IDX + 2,
+	.button_position[11] = RTOS_BUTTON_HAT_POSITION_IDX + 3,
+	.button_position[12] = 6,
+	.button_position[13] = 7,
+	.button_position[14] = 8,
+	.button_position[15] = 9,
+	.button_position[16] = 10,
+	.button_position[17] = 11,
+	.button_position[18] = 12,
+	.button_position[19] = 13,
+	.button_position[20] = 14,
+	.button_position[21] = 15,
+	.button_position[22] = 16,
+	.button_position[23] = 17
 };
 
 static void configure_time_trigger_for_ssc(uint32_t ssc_trigger_hz)

@@ -99,7 +99,7 @@ extern "C" {
 
 typedef struct {
 	uint8_t data[4]; // alway 4 bytes to match the SSC RHR 32bit register size
-	int8_t button_position[24];
+	uint32_t button_position[24];
 	xSemaphoreHandle mutex; // mutex for protecting this data structure
 	xSemaphoreHandle rtos_task_semaphore; // mutex for FreeRTOS processing task synchronization.
 } tm_stick_data_t;
